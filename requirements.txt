@@ -6,4 +6,4 @@ aiohttp==3.9.5
 requests==2.32.2
 python-dotenv==1.0.1
 ffmpeg==1.4
-RuntimeError: PyNaCl library needed in order to use voice
+PyNaCl==1.5.0

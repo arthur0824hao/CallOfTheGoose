@@ -10,7 +10,10 @@ QUEUE_PAGE_SIZE = 10
 import re
 import glob
 from yt_dlp.utils import sanitize_filename
+from discord.ext import commands
 
+# 設定允許使用機器人的用戶 ID
+AUTHORIZED_USERS = {368572601792069632, bbb, ccc} 
 # ---- 設定 Bot ----
 import os
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -247,6 +250,9 @@ class PlaySelectionView(View):
 @bot.command()
 async def list(ctx):
     """顯示播放清單，支援索引 (a.b)"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     global current_page
     current_page = 1  # ✅ 預設顯示第 1 頁
 
@@ -266,6 +272,9 @@ async def list(ctx):
 @bot.command()
 async def play(ctx, url=None):
     """播放當前歌曲或顯示選擇清單"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     global playlist, is_fading_out
 
     if not playlist["songs"]:
@@ -319,6 +328,9 @@ async def play(ctx, url=None):
 @bot.command()
 async def now(ctx):
     """顯示目前播放的歌曲，並提供暫停/播放切換、下一首(含fadeout)、叫出list 按鈕"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     voice_client = ctx.voice_client
     
     # 檢查是否有播放中的音樂
@@ -346,6 +358,9 @@ async def now(ctx):
 @bot.command()
 async def join(ctx):
     """讓機器人加入語音頻道"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     if ctx.author.voice:
         channel = ctx.author.voice.channel
         await channel.connect()
@@ -356,6 +371,9 @@ async def join(ctx):
 @bot.command()
 async def leave(ctx):
     """讓機器人離開語音頻道"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
         await ctx.send("已離開語音頻道")
@@ -365,6 +383,9 @@ async def leave(ctx):
 @bot.command()
 async def search(ctx, *, query):
     """搜尋 YouTube 音樂並提供選擇按鈕"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     ydl_opts = {
         'quiet': True,
         'nocheckcertificate': True,
@@ -410,6 +431,9 @@ async def search(ctx, *, query):
 @bot.command()
 async def add(ctx, url):
     """將單首歌曲加入播放清單，並確保標題存在"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     ydl_opts = {'quiet': True, 'format': 'bestaudio/best'}
 
     try:
@@ -439,6 +463,9 @@ async def add(ctx, url):
 @bot.command()
 async def add_playlist(ctx, playlist_url):
     """批量加入 YouTube 播放清單，並添加索引 (a.b)"""
+    if ctx.author.id not in AUTHORIZED_USERS:
+        await ctx.send("🚫 你沒有權限使用這個指令！")
+        return
     ydl_opts = {'quiet': True, 'extract_flat': True, 'playlist_items': '1-30'}
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -465,6 +492,7 @@ async def add_playlist(ctx, playlist_url):
 #---下載音樂---
 async def download_song(url, title):
     """下載歌曲，確保檔名正確"""
+
     existing_file = find_downloaded_file(title)
     if existing_file:
         print(f"✅ 已存在: {existing_file}")

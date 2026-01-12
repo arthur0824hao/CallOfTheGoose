@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+<<<<<<< Updated upstream
+      "cwd": "d:/code/DiscordBot/GooseOnCall-preview",
+      "program": "d:/code/DiscordBot/GooseOnCall-preview/build/Debug/outDebug",
+=======
+      "cwd": "d:/code/DiscordMusicBot/GooseOnCall-preview",
+      "program": "d:/code/DiscordMusicBot/GooseOnCall-preview/build/Debug/outDebug",
+>>>>>>> Stashed changes
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}

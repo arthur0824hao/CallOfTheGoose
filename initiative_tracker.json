@@ -1,0 +1,163 @@
+{
+  "channels": {
+    "1458306133759623290": {
+      "entries": [
+        {
+          "name": "熔岩巨人",
+          "initiative": 49,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "阿斯提",
+          "initiative": 36,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "安奎斯",
+          "initiative": 32,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "潘",
+          "initiative": 29,
+          "roll_detail": "[20] = 35",
+          "hp": 10,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {
+            "空手": "1d50"
+          }
+        },
+        {
+          "name": "凱洛爾",
+          "initiative": 29,
+          "roll_detail": null,
+          "hp": 22,
+          "elements": 53,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "諾拉",
+          "initiative": 28,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {
+            "攻擊": "1d50"
+          }
+        },
+        {
+          "name": "康卓",
+          "initiative": 26,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "高爾迪",
+          "initiative": 20,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "蘑菇",
+          "initiative": 1,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "GM",
+          "initiative": 0,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {
+            "1d50": "1d50"
+          }
+        }
+      ],
+      "current_round": 2,
+      "current_index": 6,
+      "is_active": true
+    },
+    "1342103368537210963": {
+      "entries": [
+        {
+          "name": "潘",
+          "initiative": 1,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        }
+      ],
+      "current_round": 1,
+      "current_index": 0,
+      "is_active": true
+    },
+    "1298201971974733864": {
+      "entries": [
+        {
+          "name": "蒼藍星",
+          "initiative": 10,
+          "roll_detail": "[5] = 10",
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        }
+      ],
+      "current_round": 1,
+      "current_index": 0,
+      "is_active": true
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "songs": [
+    {
+      "title": "[Unofficial] [Library of Ruina] Roland Boss Piano Ver. (Cover & artwork by SicaH)",
+      "is_downloaded": false,
+      "url": "https://www.youtube.com/watch?v=14_yuF1H4hk",
+      "musicsheet": "default",
+      "index": "1.1",
+      "sanitized_title": "[Unofficial] [Library of Ruina] Roland Boss Piano Ver. (Cover & artwork by SicaH",
+      "is_playing": false,
+      "is_previous": false
+    },
+    {
+      "title": "【Official Music Video】Haruhikage (MyGO!!!!! ver.) / MyGO!!!!!",
+      "is_downloaded": false,
+      "url": "https://www.youtube.com/watch?v=ZsvJUh03MwI",
+      "musicsheet": "default",
+      "index": "1.2",
+      "sanitized_title": "【Official Music Video】Haruhikage (MyGO!!!!! ver.) _ MyGO!!!!!",
+      "is_playing": true,
+      "is_previous": false
+    },
+    {
+      "title": "Mygo世家情主題曲【你為啥物愛演奏春日影】Official Music Video",
+      "is_downloaded": false,
+      "url": "https://www.youtube.com/watch?v=hSvUXQVxQZU",
+      "musicsheet": "default",
+      "index": "1.3",
+      "sanitized_title": "Mygo世家情主題曲【你為啥物愛演奏春日影】Official Music Video",
+      "is_playing": false,
+      "is_previous": false
+    },
+    {
+      "title": "【Official Music Video】Haruhikage (MyGO!!!!! ver.) / MyGO!!!!!",
+      "is_downloaded": false,
+      "url": "https://www.youtube.com/watch?v=ZsvJUh03MwI",
+      "musicsheet": "default",
+      "index": "1.4",
+      "sanitized_title": "【Official Music Video】Haruhikage (MyGO!!!!! ver.) _ MyGO!!!!!",
+      "is_playing": true,
+      "is_previous": false
+    }
+  ]
+}

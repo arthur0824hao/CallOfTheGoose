@@ -3,17 +3,6 @@
     "1458306133759623290": {
       "entries": [
         {
-          "name": "熔岩巨人",
-          "initiative": 49,
-          "roll_detail": null,
-          "hp": 0,
-          "elements": 0,
-          "atk": 0,
-          "def_": 0,
-          "status_effects": {},
-          "favorite_dice": {}
-        },
-        {
           "name": "阿斯提",
           "initiative": 36,
           "roll_detail": null,
@@ -25,22 +14,27 @@
           "favorite_dice": {}
         },
         {
-          "name": "安奎斯",
-          "initiative": 32,
-          "roll_detail": null,
-          "hp": 0,
+          "name": "Someone",
+          "initiative": 31,
+          "roll_detail": "[1] = 31",
+          "hp": 29,
           "elements": 0,
-          "atk": 0,
-          "def_": 0,
+          "atk": 5,
+          "def_": 4,
+          "獎勵/懲罰": 0,
+          "優勢/劣勢": 0,
           "status_effects": {},
-          "favorite_dice": {}
+          "favorite_dice": {
+            "普攻": "1d10+10+1d12"
+          },
+          "last_formula": "1d20+30"
         },
         {
           "name": "潘",
           "initiative": 29,
           "roll_detail": "[20] = 35",
-          "hp": 10,
-          "elements": 0,
+          "hp": 30,
+          "elements": 30,
           "atk": 0,
           "def_": 0,
           "status_effects": {},
@@ -53,12 +47,19 @@
           "initiative": 29,
           "roll_detail": null,
           "hp": 22,
-          "elements": 53,
-          "atk": 0,
+          "elements": 3,
+          "atk": 1,
           "def_": 0,
-          "status_effects": {},
+          "status_effects": {
+            "懲罰": "1"
+          },
           "favorite_dice": {
-            "體質": "cc 100"
+            "體質": "cc 100",
+            "閃避": "1d50-1d4",
+            "空手": "1D50+10",
+            "體能": "2D50KH+13",
+            "反擊": "1D50",
+            "格檔": "1D50-1D4"
           }
         },
         {
@@ -75,39 +76,18 @@
           }
         },
         {
-          "name": "康卓",
-          "initiative": 26,
+          "name": "以斯崔",
+          "initiative": 23,
           "roll_detail": null,
           "hp": 0,
           "elements": 0,
           "atk": 0,
           "def_": 0,
-          "status_effects": {},
-          "favorite_dice": {}
-        },
-        {
-          "name": "左眼",
-          "initiative": 25,
-          "roll_detail": "[10] = 25",
-          "hp": 600,
-          "elements": 1200,
-          "atk": 3,
-          "def_": 5,
+          "獎勵/懲罰": 0,
+          "優勢/劣勢": 0,
           "status_effects": {},
           "favorite_dice": {},
-          "last_formula": "1d20+15"
-        },
-        {
-          "name": "右眼",
-          "initiative": 25,
-          "roll_detail": "[10] = 25",
-          "hp": 600,
-          "elements": 1200,
-          "atk": 3,
-          "def_": 5,
-          "status_effects": {},
-          "favorite_dice": {},
-          "last_formula": "1d20+15"
+          "last_formula": null
         },
         {
           "name": "高爾迪",
@@ -119,20 +99,6 @@
           "def_": 0,
           "status_effects": {},
           "favorite_dice": {}
-        },
-        {
-          "name": "依克奎德",
-          "initiative": 1,
-          "roll_detail": null,
-          "hp": 0,
-          "elements": 0,
-          "atk": 0,
-          "def_": 0,
-          "獎勵/懲罰": 0,
-          "優勢/劣勢": 0,
-          "status_effects": {},
-          "favorite_dice": {},
-          "last_formula": null
         },
         {
           "name": "GM",
@@ -149,8 +115,8 @@
           }
         }
       ],
-      "current_round": 2,
-      "current_index": 7,
+      "current_round": 9,
+      "current_index": 5,
       "is_active": true,
       "selected_character": "凱洛爾"
     },
@@ -165,7 +131,9 @@
           "atk": 0,
           "def_": 0,
           "status_effects": {},
-          "favorite_dice": {}
+          "favorite_dice": {
+            "體能": ".40 2d50kh+100"
+          }
         },
         {
           "name": "諾拉",
@@ -230,7 +198,7 @@
       "current_round": 2,
       "current_index": 1,
       "is_active": true,
-      "selected_character": null
+      "selected_character": "凱洛爾"
     },
     "1298201971974733864": {
       "entries": [

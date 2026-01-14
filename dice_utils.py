@@ -530,6 +530,9 @@ def parse_and_roll(formula: str) -> Tuple[int, List[DiceRoll]]:
     if len(formula) > 500:
         raise DiceParseError("公式長度不能超過 500 字符")
 
+    # 統一轉換為小寫，確保 2D50 和 2d50 等效
+    formula = formula.lower()
+
     # 詞法分析
     try:
         tokenizer = Tokenizer(formula)

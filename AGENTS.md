@@ -21,6 +21,12 @@ python bot.py
 - FFmpeg must be installed and available in PATH for music playback
 - Discord bot token must be configured via environment or in code
 
+## Environment Maintenance
+
+### Update Tools
+- **OpenCode**: Run `opencode upgrade`
+- **Oh My OpenCode**: Run `ohmyopencode update` (or check installation docs)
+
 ## Architecture Overview
 
 The bot follows a modular architecture:
@@ -180,4 +186,4 @@ All commands use the `!` prefix (e.g., `!play`, `!r`, `!skip`).
 1. 確保基本播放穩定後再嘗試音質優化
 2. 考慮使用更穩定的播放庫
 3. 將複雜功能設為選項，而非默認
-4. 重視可靠性勝於功能豐富度
+4. 重視可靠性勝於功能豐富度- 已安裝 Bun

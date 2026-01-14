@@ -595,6 +595,8 @@ def roll_favorite_dice(channel_id, name: str, dice_name: str):
     Returns:
         tuple: (成功與否, 結果或錯誤訊息, 公式, 擲骰詳情)
     """
+    from dice_utils import format_multiple_results
+    
     entry = get_entry(channel_id, name)
     if not entry:
         return False, "找不到角色", None, None
@@ -604,20 +606,55 @@ def roll_favorite_dice(channel_id, name: str, dice_name: str):
         return False, "找不到常用骰", None, None
     
     try:
-        result, dice_rolls = parse_and_roll(formula)
+        # 解析重複次數（.N 格式）
+        times = 1
+        actual_formula = formula.strip()
         
-        # 生成擲骰詳情
-        if dice_rolls:
-            rolls_str = ", ".join(
-                f"[{', '.join(map(str, d.kept_rolls if d.kept_rolls else d.rolls))}]"
-                for d in dice_rolls
-            )
-            roll_detail = f"{rolls_str} = {result}"
+        if actual_formula.startswith('.'):
+            parts = actual_formula.split(None, 1)
+            if len(parts) >= 2:
+                try:
+                    times_str = parts[0][1:]  # 移除開頭的 '.'
+                    times = int(times_str)
+                    actual_formula = parts[1]
+                except ValueError:
+                    pass  # 解析失敗，視為普通公式
+            
+            # 驗證重複次數範圍
+            if times < 1:
+                times = 1
+            if times > 20:
+                times = 20
+        
+        # 執行擲骰
+        if times == 1:
+            result, dice_rolls = parse_and_roll(actual_formula)
+            
+            # 生成擲骰詳情
+            if dice_rolls:
+                rolls_str = ", ".join(
+                    f"[{', '.join(map(str, d.kept_rolls if d.kept_rolls else d.rolls))}]"
+                    for d in dice_rolls
+                )
+                roll_detail = f"{rolls_str} = {result}"
+            else:
+                roll_detail = str(result)
+            
+            log_message(f"⚔️ 先攻表: {name} 擲 [{dice_name}] ({formula}) = {result}")
+            return True, result, formula, roll_detail
         else:
-            roll_detail = str(result)
-        
-        log_message(f"⚔️ 先攻表: {name} 擲 [{dice_name}] ({formula}) = {result}")
-        return True, result, formula, roll_detail
+            # 多次擲骰
+            results = []
+            for _ in range(times):
+                result, dice_rolls = parse_and_roll(actual_formula)
+                results.append((result, dice_rolls))
+            
+            # 使用格式化函數生成詳情
+            roll_detail = format_multiple_results(actual_formula, results, times)
+            total_results = [r[0] for r in results]
+            
+            log_message(f"⚔️ 先攻表: {name} 擲 [{dice_name}] ({formula}) × {times}")
+            return True, total_results, formula, roll_detail
         
     except DiceParseError as e:
         return False, str(e), formula, None

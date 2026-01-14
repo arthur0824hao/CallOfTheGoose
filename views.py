@@ -682,7 +682,13 @@ class InitFavDiceRollSelect(discord.ui.Select):
         selected_dice = self.values[0]
         success, result, formula, roll_detail = roll_favorite_dice(channel_id, self.character_name, selected_dice)
         if success:
-            await interaction.response.send_message(f"🎲 **{self.character_name}** 擲 **{selected_dice}** ({formula})\n結果: {roll_detail}")
+            # 多次擲骰時 roll_detail 已經是完整格式化字串
+            if isinstance(result, list):
+                # 多次擲骰結果
+                await interaction.response.send_message(f"🎲 **{self.character_name}** 擲 **{selected_dice}**\n{roll_detail}")
+            else:
+                # 單次擲骰結果
+                await interaction.response.send_message(f"🎲 **{self.character_name}** 擲 **{selected_dice}** ({formula})\n結果: {roll_detail}")
         else:
             await interaction.response.send_message(f"❌ {result}", ephemeral=True)
 

@@ -745,39 +745,23 @@ class QuickDiceButton(Button):
         self.formula = formula
     
     async def callback(self, interaction: discord.Interaction):
-        from dice_utils import parse_and_roll, DiceParseError, try_coc_roll
+        from initiative_utils import roll_favorite_dice
         
-        # 嘗試 CoC 擲骰
-        coc_result = try_coc_roll(self.formula)
-        if coc_result:
-            if coc_result.startswith("❌"):
-                await interaction.response.send_message(coc_result, ephemeral=True)
+        channel_id = self.ctx.channel.id
+        success, result, formula, roll_detail = roll_favorite_dice(channel_id, self.char_name, self.dice_name)
+        
+        if success:
+            # 多次擲骰時 roll_detail 已經是完整格式化字串
+            if isinstance(result, list):
+                await interaction.response.send_message(
+                    f"🎲 **{self.char_name}** 擲 **{self.dice_name}**\n{roll_detail}"
+                )
             else:
                 await interaction.response.send_message(
-                    f"🎲 **{self.char_name}** 擲 **{self.dice_name}**\n{coc_result}"
+                    f"🎲 **{self.char_name}** 擲 **{self.dice_name}** ({formula})\n結果: {roll_detail}"
                 )
-            return
-        
-        try:
-            result, dice_rolls = parse_and_roll(self.formula)
-            
-            # 生成擲骰詳情
-            if dice_rolls:
-                rolls_str = ", ".join(
-                    f"[{', '.join(map(str, d.kept_rolls if d.kept_rolls else d.rolls))}]"
-                    for d in dice_rolls
-                )
-                roll_detail = f"{rolls_str} = {result}"
-            else:
-                roll_detail = str(result)
-            
-            await interaction.response.send_message(
-                f"🎲 **{self.char_name}** 擲 **{self.dice_name}** ({self.formula})\n"
-                f"結果: {roll_detail}"
-            )
-            
-        except DiceParseError as e:
-            await interaction.response.send_message(f"❌ 公式錯誤: {e}", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"❌ 公式錯誤: {result}", ephemeral=True)
 
 class InitRemoveSelectButton(Button):
     """移除特定角色按鈕"""

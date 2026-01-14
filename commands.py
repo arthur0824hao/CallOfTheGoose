@@ -866,15 +866,82 @@ async def cmd_init(ctx, *, args: str = None):
     - !init end                  結束戰鬥
     - !init reset                重置回合
     """
-    from views import InitiativeTrackerView
-    
-    # 沒有參數時，顯示先攻表
-    if not args:
-        channel_id = ctx.channel.id
+    from views import InitiativeTrackerView, FavoriteDiceOverviewView
+    from initiative_utils import get_favorite_dice_display
+    import shared_state
+
+    async def display_init_ui(ctx, force_new=False):
+        """
+        顯示先攻表 UI (包含常用骰區)
+        
+        Args:
+            ctx: Discord context
+            force_new: 強制發送新訊息 (預設 False，嘗試編輯舊訊息)
+        """
+        channel_id = str(ctx.channel.id)
         display = get_tracker_display(channel_id)
         view = InitiativeTrackerView(ctx)
-        await ctx.send(display, view=view)
+        
+        # 取得現有訊息參考
+        msg_refs = shared_state.initiative_messages.get(channel_id, {})
+        tracker_msg = msg_refs.get("tracker_msg")
+        dice_msg = msg_refs.get("dice_msg")
+        
+        # 如果強制新訊息，先刪除舊訊息
+        if force_new:
+            if tracker_msg:
+                try:
+                    await tracker_msg.delete()
+                except Exception:
+                    pass
+            if dice_msg:
+                try:
+                    await dice_msg.delete()
+                except Exception:
+                    pass
+            tracker_msg = None
+            dice_msg = None
+        
+        # 嘗試編輯現有訊息，否則發送新訊息
+        if tracker_msg:
+            try:
+                await tracker_msg.edit(content=display, view=view)
+            except Exception:
+                tracker_msg = await ctx.send(display, view=view)
+        else:
+            tracker_msg = await ctx.send(display, view=view)
+        
+        # 顯示常用骰區
+        dice_display = get_favorite_dice_display(channel_id)
+        if dice_display:
+            dice_view = FavoriteDiceOverviewView(ctx)
+            if dice_msg:
+                try:
+                    await dice_msg.edit(content=dice_display, view=dice_view)
+                except Exception:
+                    dice_msg = await ctx.send(dice_display, view=dice_view)
+            else:
+                dice_msg = await ctx.send(dice_display, view=dice_view)
+        else:
+            # 沒有常用骰，刪除舊的常用骰訊息（如果有的話）
+            if dice_msg:
+                try:
+                    await dice_msg.delete()
+                except Exception:
+                    pass
+            dice_msg = None
+        
+        # 儲存訊息參考
+        shared_state.initiative_messages[channel_id] = {
+            "tracker_msg": tracker_msg,
+            "dice_msg": dice_msg
+        }
+    
+    # 沒有參數時，顯示先攻表 (強制刷新)
+    if not args:
+        await display_init_ui(ctx, force_new=True)
         return
+
     
     args = args.strip()
     parts = args.split()
@@ -897,9 +964,7 @@ async def cmd_init(ctx, *, args: str = None):
         success = add_entry(ctx.channel.id, name, initiative)
         if success:
             await ctx.send(f"✅ 已新增 **{name}** (先攻: {initiative})")
-            display = get_tracker_display(ctx.channel.id)
-            view = InitiativeTrackerView(ctx)
-            await ctx.send(display, view=view)
+            await display_init_ui(ctx)
         else:
             await ctx.send(f"❌ 角色 **{name}** 已存在！")
     
@@ -913,9 +978,7 @@ async def cmd_init(ctx, *, args: str = None):
                 await ctx.send(f"🔄 **第 {tracker['current_round']} 回合開始！** 輪到 **{name}** 行動")
             else:
                 await ctx.send(f"⏭ 輪到 **{name}** 行動")
-            display = get_tracker_display(channel_id)
-            view = InitiativeTrackerView(ctx)
-            await ctx.send(display, view=view)
+            await display_init_ui(ctx)
         else:
             await ctx.send("❌ 先攻表是空的！")
     
@@ -929,9 +992,7 @@ async def cmd_init(ctx, *, args: str = None):
         success = remove_entry(ctx.channel.id, name)
         if success:
             await ctx.send(f"✅ 已移除 **{name}**")
-            display = get_tracker_display(ctx.channel.id)
-            view = InitiativeTrackerView(ctx)
-            await ctx.send(display, view=view)
+            await display_init_ui(ctx)
         else:
             await ctx.send(f"❌ 找不到 **{name}**")
     
@@ -959,9 +1020,7 @@ async def cmd_init(ctx, *, args: str = None):
             if atk is not None: stats_parts.append(f"ATK: {atk}")
             if def_ is not None: stats_parts.append(f"DEF: {def_}")
             await ctx.send(f"✅ 已設定 **{name}** 數值: {', '.join(stats_parts)}")
-            display = get_tracker_display(ctx.channel.id)
-            view = InitiativeTrackerView(ctx)
-            await ctx.send(display, view=view)
+            await display_init_ui(ctx)
         else:
             await ctx.send(f"❌ 找不到 **{name}**")
     
@@ -1046,9 +1105,7 @@ async def cmd_init(ctx, *, args: str = None):
         # !init reset
         reset_tracker(ctx.channel.id)
         await ctx.send("🔄 已重置回合數")
-        display = get_tracker_display(ctx.channel.id)
-        view = InitiativeTrackerView(ctx)
-        await ctx.send(display, view=view)
+        await display_init_ui(ctx)
     
     else:
         # 嘗試解析為骰子公式 + 名字
@@ -1060,9 +1117,7 @@ async def cmd_init(ctx, *, args: str = None):
             success, result, roll_detail = add_entry_with_roll(ctx.channel.id, formula, name)
             if success:
                 await ctx.send(f"🎲 擲骰: {formula} → {roll_detail}\n✅ 已新增 **{name}** (先攻: {result})")
-                display = get_tracker_display(ctx.channel.id)
-                view = InitiativeTrackerView(ctx)
-                await ctx.send(display, view=view)
+                await display_init_ui(ctx)
             else:
                 await ctx.send(f"❌ {result}")
         else:

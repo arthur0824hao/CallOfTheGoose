@@ -17,7 +17,7 @@
       "musicsheet": "default",
       "index": "1.2",
       "sanitized_title": "【Official Music Video】Haruhikage (MyGO!!!!! ver.) _ MyGO!!!!!",
-      "is_playing": true,
+      "is_playing": false,
       "is_previous": false
     },
     {
@@ -37,7 +37,27 @@
       "musicsheet": "default",
       "index": "1.4",
       "sanitized_title": "【Official Music Video】Haruhikage (MyGO!!!!! ver.) _ MyGO!!!!!",
-      "is_playing": true,
+      "is_playing": false,
+      "is_previous": false
+    },
+    {
+      "title": "The Bird Song (with Em Beihold)",
+      "is_downloaded": false,
+      "url": "https://www.youtube.com/watch?v=WljHl_9k5oU",
+      "musicsheet": "default",
+      "index": "1.5",
+      "sanitized_title": "The Bird Song (with Em Beihold)",
+      "is_playing": false,
+      "is_previous": false
+    },
+    {
+      "title": "The Bird Song (with Em Beihold)",
+      "is_downloaded": false,
+      "url": "https://www.youtube.com/watch?v=WljHl_9k5oU",
+      "musicsheet": "default",
+      "index": "1.6",
+      "sanitized_title": "The Bird Song (with Em Beihold)",
+      "is_playing": false,
       "is_previous": false
     }
   ]

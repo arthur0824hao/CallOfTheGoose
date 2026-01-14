@@ -667,3 +667,27 @@ def format_coc_result(coc_result: CoCRollResult) -> str:
         output += f"{result_str} > {coc_result.skill_value} ❌ 失敗"
 
     return output
+
+def try_coc_roll(formula: str) -> Optional[str]:
+    """
+    嘗試解析並執行 CoC 擲骰
+    若成功，返回格式化後的結果字串
+    若非 CoC 格式，返回 None
+    """
+    import re
+    match = re.match(r'^cc(n)?(\d*)\s+(\d+)', formula.strip(), re.IGNORECASE)
+    if not match:
+        return None
+        
+    is_penalty = match.group(1) is not None
+    num_dice_str = match.group(2)
+    num_dice = int(num_dice_str) if num_dice_str else 0
+    skill_value = int(match.group(3))
+    
+    if num_dice < 0 or num_dice > 3:
+        return "❌ 獎勵/懲罰骰數量必須在 0-3 之間"
+    if skill_value < 1 or skill_value > 100:
+        return "❌ 技能值必須在 1-100 之間"
+        
+    coc_result = roll_coc_dice(skill_value, num_dice, not is_penalty)
+    return format_coc_result(coc_result)

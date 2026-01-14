@@ -1,6 +1,7 @@
-.mp3
-.env
-.m4a
-song/
-.vscode
+*.mp3
+*.env
+*.m4a
+*/song/
+*.vscode
 GooseOnCall-preview.code-workspace
+*.opus

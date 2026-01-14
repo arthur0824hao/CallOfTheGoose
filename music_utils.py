@@ -17,178 +17,9 @@ import shared_state  # 添加缺少的import，修復下一首按鈕錯誤
 DEBUG_MODE = True
 LOG_DIR = "logs"
 LOG_FILE_PATH = os.path.join(LOG_DIR, "log.txt")
-MUSICSHEET_BASE_DIR = "musicsheet"
-SHEETS_CONFIG_PATH = os.path.join(MUSICSHEET_BASE_DIR, "sheets.json")
+MUSIC_SHEET_PATH = "musicsheet/default/musicsheet.json"
 SONG_DIR = "song/"
 QUEUE_PAGE_SIZE = 10
-
-# ============================================
-# 歌單路徑管理
-# ============================================
-
-def get_musicsheet_path(sheet_name=None):
-    """取得指定歌單的 musicsheet.json 路徑"""
-    if sheet_name is None:
-        sheet_name = shared_state.current_musicsheet
-    return os.path.join(MUSICSHEET_BASE_DIR, sheet_name, "musicsheet.json")
-
-def get_current_musicsheet_path():
-    """取得目前使用的 musicsheet.json 路徑"""
-    return get_musicsheet_path(shared_state.current_musicsheet)
-
-# 為了向後相容，保留 MUSIC_SHEET_PATH 但改為動態屬性
-class _DynamicPath:
-    @property
-    def MUSIC_SHEET_PATH(self):
-        return get_current_musicsheet_path()
-    
-_dynamic = _DynamicPath()
-
-# ============================================
-# 歌單清單管理
-# ============================================
-
-def load_sheets_config():
-    """讀取歌單清單設定"""
-    if not os.path.exists(SHEETS_CONFIG_PATH):
-        # 建立預設設定
-        default_config = {
-            "current": "default",
-            "sheets": [
-                {"name": "default", "display_name": "預設"}
-            ]
-        }
-        os.makedirs(MUSICSHEET_BASE_DIR, exist_ok=True)
-        with open(SHEETS_CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(default_config, f, ensure_ascii=False, indent=2)
-        return default_config
-    
-    with open(SHEETS_CONFIG_PATH, "r", encoding="utf-8") as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return {"current": "default", "sheets": [{"name": "default", "display_name": "預設"}]}
-
-def save_sheets_config(config):
-    """儲存歌單清單設定"""
-    os.makedirs(MUSICSHEET_BASE_DIR, exist_ok=True)
-    with open(SHEETS_CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
-
-def list_musicsheets():
-    """列出所有歌單"""
-    config = load_sheets_config()
-    return config.get("sheets", [])
-
-def create_musicsheet(name, display_name=None):
-    """建立新歌單"""
-    config = load_sheets_config()
-    
-    # 檢查是否已存在
-    if any(s["name"] == name for s in config["sheets"]):
-        return False, "歌單已存在"
-    
-    # 建立資料夾和空的 musicsheet.json
-    sheet_dir = os.path.join(MUSICSHEET_BASE_DIR, name)
-    os.makedirs(sheet_dir, exist_ok=True)
-    
-    sheet_path = os.path.join(sheet_dir, "musicsheet.json")
-    with open(sheet_path, "w", encoding="utf-8") as f:
-        json.dump({"songs": []}, f, ensure_ascii=False, indent=2)
-    
-    # 更新設定
-    config["sheets"].append({
-        "name": name,
-        "display_name": display_name or name
-    })
-    save_sheets_config(config)
-    
-    log_message(f"📁 新增歌單: {name}")
-    return True, "歌單已建立"
-
-def delete_musicsheet(name):
-    """刪除歌單"""
-    if name == "default":
-        return False, "無法刪除預設歌單"
-    
-    config = load_sheets_config()
-    
-    # 檢查是否存在
-    if not any(s["name"] == name for s in config["sheets"]):
-        return False, "歌單不存在"
-    
-    # 如果正在使用這個歌單，切換到 default
-    if shared_state.current_musicsheet == name:
-        shared_state.current_musicsheet = "default"
-        config["current"] = "default"
-    
-    # 移除設定
-    config["sheets"] = [s for s in config["sheets"] if s["name"] != name]
-    save_sheets_config(config)
-    
-    # 刪除資料夾 (可選，這裡只移除設定不刪檔案)
-    log_message(f"🗑️ 刪除歌單: {name}")
-    return True, "歌單已刪除"
-
-def switch_musicsheet(name):
-    """切換歌單"""
-    config = load_sheets_config()
-    
-    # 檢查是否存在
-    if not any(s["name"] == name for s in config["sheets"]):
-        return False, "歌單不存在"
-    
-    shared_state.current_musicsheet = name
-    config["current"] = name
-    save_sheets_config(config)
-    
-    log_message(f"🔄 切換歌單: {name}")
-    return True, f"已切換到歌單: {name}"
-
-def get_sheet_display_name(name):
-    """取得歌單顯示名稱"""
-    config = load_sheets_config()
-    for sheet in config["sheets"]:
-        if sheet["name"] == name:
-            return sheet.get("display_name", name)
-    return name
-
-def rename_musicsheet(old_name, new_display_name):
-    """重命名歌單顯示名稱"""
-    if old_name == "default" and new_display_name != "預設":
-        pass  # 可以改 default 的顯示名稱
-    
-    config = load_sheets_config()
-    
-    for sheet in config["sheets"]:
-        if sheet["name"] == old_name:
-            sheet["display_name"] = new_display_name
-            save_sheets_config(config)
-            log_message(f"✏️ 重命名歌單: {old_name} → {new_display_name}")
-            return True, "歌單已重命名"
-    
-    return False, "歌單不存在"
-
-# ============================================
-# 初始化歌單系統
-# ============================================
-
-def init_musicsheet_system():
-    """初始化歌單系統，確保預設歌單存在"""
-    config = load_sheets_config()
-    shared_state.current_musicsheet = config.get("current", "default")
-    
-    # 確保預設歌單資料夾存在
-    default_dir = os.path.join(MUSICSHEET_BASE_DIR, "default")
-    os.makedirs(default_dir, exist_ok=True)
-    
-    default_sheet = os.path.join(default_dir, "musicsheet.json")
-    if not os.path.exists(default_sheet):
-        with open(default_sheet, "w", encoding="utf-8") as f:
-            json.dump({"songs": []}, f, ensure_ascii=False, indent=2)
-    
-    log_message(f"🎵 歌單系統初始化完成，目前歌單: {shared_state.current_musicsheet}")
-
 
 def log_message(message):
     """即時獲取最新時間並寫入 log.txt，確保記錄正確"""
@@ -227,11 +58,10 @@ def debug_log(message):
 
 def load_musicsheet():
     """讀取 musicsheet，確保 `is_playing`、`is_previous`、`sanitized_title` 欄位存在"""
-    path = get_current_musicsheet_path()
-    if not os.path.exists(path):
+    if not os.path.exists(MUSIC_SHEET_PATH):
         return {"songs": []}
 
-    with open(path, "r", encoding="utf-8") as file:
+    with open(MUSIC_SHEET_PATH, "r", encoding="utf-8") as file:
         try:
             data = json.load(file)
             for song in data["songs"]:
@@ -251,11 +81,9 @@ def save_musicsheet(data):
         if "sanitized_title" not in song:
             song["sanitized_title"] = sanitize_filename(song["title"])
 
-    path = get_current_musicsheet_path()
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as file:
+    os.makedirs(os.path.dirname(MUSIC_SHEET_PATH), exist_ok=True)
+    with open(MUSIC_SHEET_PATH, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=2)
-
 
 def clean_string(text):
     """移除特殊字符與空白，只保留數字、字母、中文字"""
@@ -317,17 +145,16 @@ def convert_to_pcm(audio_file):
         # - 增加前置處理步驟包含正規化音量
         audio = audio.set_channels(2).set_frame_rate(48000).set_sample_width(2)
         
-        # 正規化音量至適中水準 (-16dB LUFS)，避免爆音
-        normalized_audio = audio.normalize(headroom=-16.0)
-
+        # 正規化音量至適中水準 (-14dB)，避免爆音
+        normalized_audio = audio.normalize(headroom=-14.0)
+        
         # 建立一個較大的記憶體IO物件存放PCM資料，增加緩衝區大小
         pcm_io = io.BytesIO()
         normalized_audio.export(pcm_io, format="s16le", parameters=[
-            "-ac", "2",
-            "-ar", "48000",
-            "-b:a", "320k",              # 提升位元率至 320 kbps
-            "-bufsize", "8192k",         # 增大緩衝區至 8MB
-            "-af", "aresample=resampler=soxr:precision=33"  # 使用 SoX 高品質重採樣
+            "-ac", "2", "-ar", "48000", 
+            "-b:a", "192k",        # 增加位元率
+            "-bufsize", "4096k",   # 增加緩衝區
+            "-af", "dynaudnorm"    # 動態音量正規化
         ])
         pcm_io.seek(0)  # 讀寫指標歸零
         
@@ -400,22 +227,17 @@ async def download_song(url, title, ctx):
     # 引入 cookies 配置
     import shared_state
     
-    # yt-dlp 下載選項 - 優先下載高品質音訊格式
+    # yt-dlp 下載選項 - 優先下載 mp3/m4a 格式避免轉檔
     ydl_opts = {
-        'format': 'bestaudio[ext=opus]/bestaudio[ext=m4a]/bestaudio/best',  # 優先選擇 Opus/M4A 高品質格式
+        'format': 'bestaudio[ext=mp3]/bestaudio[ext=m4a]/bestaudio/best',  # 優先選擇 mp3/m4a 格式
         'outtmpl': os.path.join(SONG_DIR, f'{sanitized_title}.%(ext)s'),
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'opus',  # Opus 編碼品質優於 MP3
-            'preferredquality': '320',  # 提升至 320 kbps
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
         }],
         'quiet': True,
         'noplaylist': True,  # 避免下載整個播放清單
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['default']
-            }
-        },
     }
     
     # 如果存在 cookies 檔案，則加入設定
@@ -746,14 +568,13 @@ def delete_unlisted_songs():
 
 def scan_and_update_musicsheet():
     """掃描 `song/` 目錄，並更新 `musicsheet.json` 內 `is_downloaded`，新增未登記歌曲，並自動排除重複項"""
-    path = get_current_musicsheet_path()
-    if not os.path.exists(path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as file:
+    if not os.path.exists(MUSIC_SHEET_PATH):
+        os.makedirs(os.path.dirname(MUSIC_SHEET_PATH), exist_ok=True)
+        with open(MUSIC_SHEET_PATH, "w", encoding="utf-8") as file:
             json.dump({"songs": []}, file)
     
     # 讀取現有的 musicsheet 數據
-    with open(path, "r", encoding="utf-8") as file:
+    with open(MUSIC_SHEET_PATH, "r", encoding="utf-8") as file:
         try:
             musicsheet_data = json.load(file)
         except json.JSONDecodeError:
@@ -796,7 +617,7 @@ def scan_and_update_musicsheet():
             "sanitized_title": sanitized_title,
             "is_downloaded": True,
             "url": None,  # 無法回溯 URL
-            "musicsheet": shared_state.current_musicsheet,
+            "musicsheet": "default",
             "index": get_next_index(musicsheet_data),
             "is_playing": False,
             "is_previous": False
@@ -810,9 +631,200 @@ def scan_and_update_musicsheet():
     reorganize_musicsheet(musicsheet_data)
 
     # 儲存 `musicsheet.json`
-    with open(path, "w", encoding="utf-8") as file:
+    with open(MUSIC_SHEET_PATH, "w", encoding="utf-8") as file:
         json.dump(musicsheet_data, file, ensure_ascii=False, indent=2)
 
     log_message(f"✅ `musicsheet.json` 已更新，新增 {len(new_songs)} 首歌曲，移除 {removed_count} 首無效歌曲")
 
+
+# ==================== 多歌單系統 ====================
+
+MUSICSHEET_BASE_DIR = "musicsheet"
+MUSICSHEET_INDEX_PATH = os.path.join(MUSICSHEET_BASE_DIR, "sheets_index.json")
+
+
+def init_musicsheet_system():
+    """初始化歌單系統，確保目錄和預設歌單存在"""
+    os.makedirs(MUSICSHEET_BASE_DIR, exist_ok=True)
+    
+    # 確保預設歌單目錄存在
+    default_dir = os.path.join(MUSICSHEET_BASE_DIR, "default")
+    os.makedirs(default_dir, exist_ok=True)
+    
+    # 確保預設歌單 JSON 存在
+    default_sheet_path = os.path.join(default_dir, "musicsheet.json")
+    if not os.path.exists(default_sheet_path):
+        with open(default_sheet_path, "w", encoding="utf-8") as f:
+            json.dump({"songs": []}, f, ensure_ascii=False, indent=2)
+    
+    # 確保索引文件存在
+    if not os.path.exists(MUSICSHEET_INDEX_PATH):
+        index_data = {
+            "sheets": [
+                {"name": "default", "display_name": "預設歌單"}
+            ]
+        }
+        with open(MUSICSHEET_INDEX_PATH, "w", encoding="utf-8") as f:
+            json.dump(index_data, f, ensure_ascii=False, indent=2)
+    
+    log_message("📁 歌單系統已初始化")
+
+
+def get_musicsheet_path(name: str) -> str:
+    """取得指定歌單的 JSON 路徑"""
+    return os.path.join(MUSICSHEET_BASE_DIR, name, "musicsheet.json")
+
+
+def list_musicsheets():
+    """列出所有歌單"""
+    if not os.path.exists(MUSICSHEET_INDEX_PATH):
+        return [{"name": "default", "display_name": "預設歌單"}]
+    
+    try:
+        with open(MUSICSHEET_INDEX_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data.get("sheets", [{"name": "default", "display_name": "預設歌單"}])
+    except Exception as e:
+        log_message(f"❌ 讀取歌單索引失敗: {e}")
+        return [{"name": "default", "display_name": "預設歌單"}]
+
+
+def create_musicsheet(name: str, display_name: str = None):
+    """
+    建立新歌單
+    
+    Returns:
+        tuple: (成功與否, 訊息)
+    """
+    if not name or not name.strip():
+        return False, "歌單名稱不能為空"
+    
+    name = name.strip().lower()
+    display_name = display_name.strip() if display_name else name
+    
+    # 檢查名稱是否合法
+    if not name.isalnum() and name != "default":
+        return False, "歌單名稱只能包含英文字母和數字"
+    
+    # 檢查是否已存在
+    sheets = list_musicsheets()
+    if any(s["name"] == name for s in sheets):
+        return False, f"歌單 `{name}` 已存在"
+    
+    # 建立目錄和 JSON
+    sheet_dir = os.path.join(MUSICSHEET_BASE_DIR, name)
+    os.makedirs(sheet_dir, exist_ok=True)
+    
+    sheet_path = get_musicsheet_path(name)
+    with open(sheet_path, "w", encoding="utf-8") as f:
+        json.dump({"songs": []}, f, ensure_ascii=False, indent=2)
+    
+    # 更新索引
+    sheets.append({"name": name, "display_name": display_name})
+    with open(MUSICSHEET_INDEX_PATH, "w", encoding="utf-8") as f:
+        json.dump({"sheets": sheets}, f, ensure_ascii=False, indent=2)
+    
+    log_message(f"📁 建立新歌單: {name} ({display_name})")
+    return True, f"歌單 `{display_name}` 已建立"
+
+
+def delete_musicsheet(name: str):
+    """
+    刪除歌單
+    
+    Returns:
+        tuple: (成功與否, 訊息)
+    """
+    if name == "default":
+        return False, "無法刪除預設歌單"
+    
+    sheets = list_musicsheets()
+    if not any(s["name"] == name for s in sheets):
+        return False, f"找不到歌單 `{name}`"
+    
+    # 從索引移除
+    sheets = [s for s in sheets if s["name"] != name]
+    with open(MUSICSHEET_INDEX_PATH, "w", encoding="utf-8") as f:
+        json.dump({"sheets": sheets}, f, ensure_ascii=False, indent=2)
+    
+    # 刪除目錄 (可選，這裡只移除索引)
+    # import shutil
+    # sheet_dir = os.path.join(MUSICSHEET_BASE_DIR, name)
+    # if os.path.exists(sheet_dir):
+    #     shutil.rmtree(sheet_dir)
+    
+    # 如果當前選中的是被刪除的歌單，切換回預設
+    import shared_state
+    if shared_state.current_musicsheet == name:
+        shared_state.current_musicsheet = "default"
+    
+    log_message(f"🗑️ 刪除歌單: {name}")
+    return True, f"歌單 `{name}` 已刪除"
+
+
+def switch_musicsheet(name: str):
+    """
+    切換到指定歌單
+    
+    Returns:
+        tuple: (成功與否, 訊息)
+    """
+    sheets = list_musicsheets()
+    if not any(s["name"] == name for s in sheets):
+        return False, f"找不到歌單 `{name}`"
+    
+    # 確保歌單 JSON 存在
+    sheet_path = get_musicsheet_path(name)
+    if not os.path.exists(sheet_path):
+        sheet_dir = os.path.join(MUSICSHEET_BASE_DIR, name)
+        os.makedirs(sheet_dir, exist_ok=True)
+        with open(sheet_path, "w", encoding="utf-8") as f:
+            json.dump({"songs": []}, f, ensure_ascii=False, indent=2)
+    
+    import shared_state
+    shared_state.current_musicsheet = name
+    
+    # 更新全局 MUSIC_SHEET_PATH (for load_musicsheet/save_musicsheet)
+    global MUSIC_SHEET_PATH
+    MUSIC_SHEET_PATH = sheet_path
+    
+    log_message(f"🔄 切換歌單: {name}")
+    return True, f"已切換到歌單 `{name}`"
+
+
+def get_sheet_display_name(name: str) -> str:
+    """取得歌單的顯示名稱"""
+    sheets = list_musicsheets()
+    for sheet in sheets:
+        if sheet["name"] == name:
+            return sheet.get("display_name", name)
+    return name
+
+
+def rename_musicsheet(name: str, new_display_name: str):
+    """
+    重命名歌單的顯示名稱
+    
+    Returns:
+        tuple: (成功與否, 訊息)
+    """
+    if not new_display_name or not new_display_name.strip():
+        return False, "顯示名稱不能為空"
+    
+    sheets = list_musicsheets()
+    found = False
+    for sheet in sheets:
+        if sheet["name"] == name:
+            sheet["display_name"] = new_display_name.strip()
+            found = True
+            break
+    
+    if not found:
+        return False, f"找不到歌單 `{name}`"
+    
+    with open(MUSICSHEET_INDEX_PATH, "w", encoding="utf-8") as f:
+        json.dump({"sheets": sheets}, f, ensure_ascii=False, indent=2)
+    
+    log_message(f"✏️ 重命名歌單: {name} → {new_display_name}")
+    return True, f"歌單 `{name}` 已重命名為 `{new_display_name}`"
 

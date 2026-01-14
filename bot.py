@@ -19,11 +19,21 @@ from music_utils import (load_musicsheet, convert_to_pcm, download_song,
                          save_musicsheet, log_message, debug_log, log_error)
 import shared_state  # 引入共享狀態模組
 
+from dotenv import load_dotenv
+
+# 加載環境變數
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+load_dotenv(ENV_PATH)
+print(f"🔧 Loading .env from: {ENV_PATH}")
+
 # 設定常數
 AUTHORIZED_USERS = {941536363751305296,881630843045544076,368572601792069632,617758239483756567,423816341796028416,358254177434206208} 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if not TOKEN:
-    print("❌ 錯誤: 未找到 DISCORD_BOT_TOKEN 環境變數")
+    print("❌ 錯誤: 未找到 DISCORD_BOT_TOKEN 環境變數，請檢查 .env 檔案")
+    # 為避免崩潰，可設為空字串或拋出異常
+    # raise ValueError("No DISCORD_TOKEN found")
     TOKEN = ""
 LOG_DIR = "logs"
 LOG_FILE_PATH = os.path.join(LOG_DIR, "log.txt")

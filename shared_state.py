@@ -35,6 +35,10 @@ def generate_operation_id():
 # 以頻道 ID 為 key 的 dict 結構
 initiative_trackers = {}  # {channel_id_str: tracker_data}
 
+# 先攻表 UI 訊息追蹤 (用於編輯訊息而非發送新訊息)
+# {channel_id_str: {"tracker_msg": Message, "dice_msg": Message}}
+initiative_messages = {}
+
 # 向後相容：舊的單一先攻表結構 (僅供資料遷移用)
 initiative_tracker = {
     "entries": [],

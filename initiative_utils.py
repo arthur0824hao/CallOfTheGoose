@@ -58,7 +58,7 @@ def load_tracker():
 # 核心操作函數 (所有函數使用 channel_id 參數)
 # ============================================
 
-def add_entry(channel_id, name: str, initiative: int, roll_detail: str = None):
+def add_entry(channel_id, name: str, initiative: int, roll_detail: str = None, formula: str = None):
     """
     新增角色到先攻表
     
@@ -87,8 +87,11 @@ def add_entry(channel_id, name: str, initiative: int, roll_detail: str = None):
         "elements": 0,
         "atk": 0,
         "def_": 0,
+        "獎勵/懲罰": 0,
+        "優勢/劣勢": 0,
         "status_effects": {},
-        "favorite_dice": {}
+        "favorite_dice": {},
+        "last_formula": formula
     }
     
     tracker["entries"].append(new_entry)
@@ -129,7 +132,7 @@ def add_entry_with_roll(channel_id, formula: str, name: str):
         else:
             roll_detail = str(result)
         
-        success = add_entry(channel_id, name, result, roll_detail)
+        success = add_entry(channel_id, name, result, roll_detail, formula)
         if success:
             return True, result, roll_detail
         else:
@@ -137,6 +140,7 @@ def add_entry_with_roll(channel_id, formula: str, name: str):
             
     except DiceParseError as e:
         return False, str(e), None
+
 
 
 def remove_entry(channel_id, name: str):
@@ -164,11 +168,68 @@ def remove_entry(channel_id, name: str):
             if not tracker["entries"]:
                 tracker["is_active"] = False
             
+            # 檢查是否為當前鎖定角色，若是則移除鎖定
+            if tracker.get("selected_character") == name:
+                tracker["selected_character"] = None
+                log_message(f"⚔️ 先攻表: 移除鎖定角色 {name}")
+            
             log_message(f"⚔️ 先攻表: 移除 {name}")
             save_tracker()
             return True
     
     return False
+
+
+def select_character(channel_id, name: str):
+    """
+    設定當前選擇的角色
+    
+    Args:
+        channel_id: 頻道 ID
+        name: 角色名稱 (若為 None 或空字串則為取消選擇)
+    
+    Returns:
+        bool: 是否成功 (若角色不存在且非取消則返回 False)
+    """
+    tracker = shared_state.get_tracker(channel_id)
+    
+    if not name or name == "None":
+        tracker["selected_character"] = None
+        log_message("⚔️ 先攻表: 取消選擇角色")
+        save_tracker()
+        return True
+    
+    # 確認角色存在
+    if not get_entry(channel_id, name):
+        return False
+        
+    tracker["selected_character"] = name
+    log_message(f"⚔️ 先攻表: 選擇角色 [{name}]")
+    save_tracker()
+    return True
+
+
+def get_selected_character(channel_id):
+    """
+    取得當前選擇的角色名稱
+    
+    Returns:
+        str or None: 角色名稱
+    """
+    tracker = shared_state.get_tracker(channel_id)
+    name = tracker.get("selected_character")
+    
+    # 再次確認該角色是否還在先攻表中 (防止被移除後仍選中)
+    if name and get_entry(channel_id, name):
+        return name
+    
+    # 若角色已不在，清除選擇
+    if name:
+        tracker["selected_character"] = None
+        save_tracker()
+        
+    return None
+
 
 
 def get_entry(channel_id, name: str):
@@ -227,6 +288,39 @@ def next_turn(channel_id):
     save_tracker()
     
     return current_entry["name"], new_round
+
+
+def prev_turn(channel_id):
+    """
+    切換到上一位行動者 (反向操作)
+    
+    Args:
+        channel_id: 頻道 ID
+        
+    Returns:
+        tuple: (角色名稱, 當前回合數)
+    """
+    tracker = shared_state.get_tracker(channel_id)
+    
+    if not tracker["entries"]:
+        return None, tracker["current_round"]
+        
+    tracker["current_index"] -= 1
+    
+    # 如果小於 0，回到上一回合的最後一位
+    if tracker["current_index"] < 0:
+        if tracker["current_round"] > 1:
+            tracker["current_round"] -= 1
+            tracker["current_index"] = len(tracker["entries"]) - 1
+        else:
+            # 第一回合第一位，無法再退
+            tracker["current_index"] = 0
+            
+    current_entry = tracker["entries"][tracker["current_index"]]
+    save_tracker()
+    
+    return current_entry["name"], tracker["current_round"]
+
 
 
 def set_stats(channel_id, name: str, hp: int = None, elements: int = None, atk: int = None, def_: int = None):
@@ -586,6 +680,7 @@ def end_combat(channel_id):
     return summary
 
 
+
 def get_tracker_display(channel_id):
     """
     生成先攻表顯示文字
@@ -602,6 +697,12 @@ def get_tracker_display(channel_id):
         return "⚔️ **先攻表** ─ 尚無角色\n\n使用 `!init 1d20+修正 名字` 加入角色"
     
     lines = [f"⚔️ **先攻表** ─ 第 {tracker['current_round']} 回合"]
+    
+    # 顯示當前鎖定角色
+    target = get_selected_character(channel_id)
+    if target:
+        lines.append(f"🎯 **當前鎖定**: {target}")
+        
     lines.append("━" * 30)
     
     for i, entry in enumerate(tracker["entries"]):
@@ -641,6 +742,7 @@ def get_tracker_display(channel_id):
     return "\n".join(lines)
 
 
+
 def get_entry_names(channel_id):
     """
     取得所有角色名稱列表
@@ -653,3 +755,100 @@ def get_entry_names(channel_id):
     """
     tracker = shared_state.get_tracker(channel_id)
     return [entry["name"] for entry in tracker["entries"]]
+
+
+def reroll_all_initiative(channel_id):
+    """
+    全員重骰先攻
+    使用角色上次的公式，若無則先攻設為 0
+    
+    Args:
+        channel_id: 頻道 ID
+    
+    Returns:
+        list: [(角色名, 舊先攻, 新先攻, 擲骰詳情), ...]
+    """
+    tracker = shared_state.get_tracker(channel_id)
+    results = []
+    
+    for entry in tracker["entries"]:
+        old_init = entry["initiative"]
+        formula = entry.get("last_formula")
+        
+        if formula:
+            try:
+                total, dice_rolls = parse_and_roll(formula)
+                
+                # 生成擲骰詳情
+                if dice_rolls:
+                    rolls_str = ", ".join(
+                        f"[{', '.join(map(str, d.kept_rolls if d.kept_rolls else d.rolls))}]"
+                        for d in dice_rolls
+                    )
+                    roll_detail = f"{rolls_str} = {total}"
+                else:
+                    roll_detail = str(total)
+                    
+                entry["initiative"] = total
+                entry["roll_detail"] = roll_detail
+                results.append((entry["name"], old_init, total, roll_detail))
+                
+            except DiceParseError as e:
+                # 公式解析錯誤，設為 0
+                entry["initiative"] = 0
+                entry["roll_detail"] = "0 (公式錯誤)"
+                results.append((entry["name"], old_init, 0, f"0 (公式錯誤: {e})"))
+        else:
+            # 無公式，設為 0
+            entry["initiative"] = 0
+            entry["roll_detail"] = "0"
+            results.append((entry["name"], old_init, 0, "0 (無公式)"))
+    
+    # 重新排序
+    sort_entries(channel_id)
+    save_tracker()
+    
+    log_message(f"⚔️ 先攻表: 全員重骰完成 ({len(results)} 位角色)")
+    return results
+
+
+
+def get_favorite_dice_display(channel_id):
+    """
+    生成角色常用骰顯示文字
+    
+    Returns:
+        str: 格式化的常用骰區文字，若無任何常用骰則返回 None
+    """
+    tracker = shared_state.get_tracker(channel_id)
+    
+    if not tracker["entries"]:
+        return None
+    
+    lines = ["🎲 **常用骰快捷區**", "━" * 30]
+    has_any_dice = False
+    
+    # 檢查是否有鎖定角色
+    target = get_selected_character(channel_id)
+    
+    for entry in tracker["entries"]:
+        # 若有鎖定角色，只顯示該角色與 GM
+        if target and entry["name"] != target and entry["name"] != "GM":
+            continue
+            
+        dice = entry.get("favorite_dice", {})
+        if dice:
+            has_any_dice = True
+            # 只顯示前 5 個以避免過長
+            dice_names = list(dice.keys())[:5]
+            dice_list = " | ".join(f"`{name}`" for name in dice_names)
+            if len(dice) > 5:
+                dice_list += " ..."
+            lines.append(f"**{entry['name']}**: {dice_list}")
+        # 若無常用骰，不顯示該角色 (根據需求)
+            
+    lines.append("━" * 30)
+    
+    return "\n".join(lines) if has_any_dice else None
+
+

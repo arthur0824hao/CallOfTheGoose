@@ -456,146 +456,160 @@ class QueueActionButton(Button):
 class InitAddButton(Button):
     """新增角色按鈕"""
     def __init__(self, ctx):
-        super().__init__(label="➕ 新增", style=discord.ButtonStyle.success)
+        super().__init__(label="➕ 新增角色", style=discord.ButtonStyle.success, row=0)
         self.ctx = ctx
-
+    
     async def callback(self, interaction: discord.Interaction):
         from views import InitAddModal
         modal = InitAddModal(self.ctx)
         await interaction.response.send_modal(modal)
 
+class InitPrevButton(Button):
+    """上一位行動者按鈕"""
+    def __init__(self, ctx):
+        super().__init__(label="⏮ 上一位", style=discord.ButtonStyle.primary, row=0)
+        self.ctx = ctx
+    
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        from initiative_utils import prev_turn
+        from views import refresh_tracker_view
+        
+        channel_id = self.ctx.channel.id
+        name, current_round = prev_turn(channel_id)
+        
+        if name:
+            await refresh_tracker_view(self.ctx)
+        else:
+            await interaction.followup.send("❌ 先攻表是空的！", ephemeral=True)
 
 class InitNextButton(Button):
     """下一位行動者按鈕"""
     def __init__(self, ctx):
-        super().__init__(label="⏭ 下一位", style=discord.ButtonStyle.primary)
+        super().__init__(label="⏭ 下一位", style=discord.ButtonStyle.primary, row=0)
         self.ctx = ctx
-
+    
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        
-        from initiative_utils import next_turn, get_tracker_display
+        from initiative_utils import next_turn, get_tracker_display, save_tracker
+        from views import InitiativeTrackerView
         
         channel_id = self.ctx.channel.id
         name, new_round = next_turn(channel_id)
         
-        if name is None:
+        if name:
+            if new_round:
+                tracker = shared_state.get_tracker(channel_id)
+                await interaction.followup.send(f"🔄 **第 {tracker['current_round']} 回合開始！** 輪到 **{name}** 行動")
+            
+            # 刷新顯示
+            display = get_tracker_display(channel_id)
+            view = InitiativeTrackerView(self.ctx)
+            await interaction.message.edit(content=display, view=view)
+        else:
             await interaction.followup.send("❌ 先攻表是空的！", ephemeral=True)
-            return
-        
-        # 更新先攻表顯示
-        from views import InitiativeTrackerView
-        view = InitiativeTrackerView(self.ctx)
-        display = get_tracker_display(channel_id)
-        
-        if new_round:
-            await interaction.followup.send(f"🔄 **新回合開始！** 輪到 **{name}** 行動")
-        
-        await interaction.message.edit(content=display, view=view)
-
 
 class InitRemoveButton(Button):
     """移除角色按鈕"""
     def __init__(self, ctx):
-        super().__init__(label="🗑️ 移除", style=discord.ButtonStyle.danger)
+        super().__init__(label="🗑️ 移除角色", style=discord.ButtonStyle.danger, row=0)
         self.ctx = ctx
-
+    
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
         from initiative_utils import get_entry_names
         from views import InitRemoveView
         
         channel_id = self.ctx.channel.id
         names = get_entry_names(channel_id)
         
+        if not names:
+            await interaction.response.send_message("❌ 先攻表是空的！", ephemeral=True)
+            return
+            
         view = InitRemoveView(self.ctx, names)
-        await interaction.followup.send("🗑️ 選擇要移除的角色：" if names else "⚠️ 先攻表是空的，您可以：", view=view, ephemeral=True)
+        await interaction.response.send_message("🗑️ 選擇要移除的角色：", view=view, ephemeral=True)
 
+class InitResetButton(Button):
+    """重置回合按鈕"""
+    def __init__(self, ctx):
+        super().__init__(label="🔄 重置回合", style=discord.ButtonStyle.secondary, row=0)
+        self.ctx = ctx
+    
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        from initiative_utils import reset_tracker, get_tracker_display
+        from views import InitiativeTrackerView
+        
+        channel_id = self.ctx.channel.id
+        reset_tracker(channel_id)
+        
+        display = get_tracker_display(channel_id)
+        view = InitiativeTrackerView(self.ctx)
+        await interaction.message.edit(content=display, view=view)
+        await interaction.followup.send("🔄 已重置回合數", ephemeral=True)
 
 class InitEndButton(Button):
     """結束戰鬥按鈕"""
     def __init__(self, ctx):
-        super().__init__(label="🏁 結束", style=discord.ButtonStyle.danger)
+        super().__init__(label="🏁 結束戰鬥", style=discord.ButtonStyle.danger, row=1)
         self.ctx = ctx
-
+    
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
         from views import InitEndConfirmView
         view = InitEndConfirmView(self.ctx)
-        await interaction.followup.send("⚠️ 確定要結束戰鬥嗎？這將清空先攻表。", view=view, ephemeral=True)
-
+        await interaction.response.send_message("⚠️ 確定要結束戰鬥並清空先攻表嗎？", view=view, ephemeral=True)
 
 class InitStatsButton(Button):
     """設定數值按鈕"""
     def __init__(self, ctx):
-        super().__init__(label="📊 Stats", style=discord.ButtonStyle.secondary, row=1)
+        super().__init__(label="📊 設定數值", style=discord.ButtonStyle.secondary, row=1)
         self.ctx = ctx
-
+    
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
-        from initiative_utils import get_entry_names
-        from views import InitCharacterSelectView
+        from initiative_utils import get_entry_names, get_selected_character
+        from views import InitCharacterSelectView, InitStatsModalWithName
         
         channel_id = self.ctx.channel.id
-        names = get_entry_names(channel_id)
-        if not names:
-            await interaction.followup.send("❌ 先攻表是空的！", ephemeral=True)
-            return
+        selected = get_selected_character(channel_id)
         
+        if selected:
+            modal = InitStatsModalWithName(self.ctx, selected)
+            await interaction.response.send_modal(modal)
+            return
+            
+        names = get_entry_names(channel_id)
         view = InitCharacterSelectView(self.ctx, names, "stats")
-        await interaction.followup.send("📊 選擇要設定數值的角色：", view=view, ephemeral=True)
-
+        await interaction.response.send_message("📊 選擇要設定數值的角色：", view=view, ephemeral=True)
 
 class InitHPButton(Button):
     """調整 HP 按鈕"""
     def __init__(self, ctx):
-        super().__init__(label="❤️ HP", style=discord.ButtonStyle.secondary, row=1)
+        super().__init__(label="❤️ 調整 HP", style=discord.ButtonStyle.secondary, row=1)
         self.ctx = ctx
-
+    
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
-        from initiative_utils import get_entry_names
-        from views import InitCharacterSelectView
+        from initiative_utils import get_entry_names, get_selected_character
+        from views import InitCharacterSelectView, InitHPModalWithName
         
         channel_id = self.ctx.channel.id
-        names = get_entry_names(channel_id)
+        selected = get_selected_character(channel_id)
         
+        if selected:
+            modal = InitHPModalWithName(self.ctx, selected)
+            await interaction.response.send_modal(modal)
+            return
+            
+        names = get_entry_names(channel_id)
         view = InitCharacterSelectView(self.ctx, names, "hp")
-        await interaction.followup.send("❤️ 選擇要調整 HP 的角色：", view=view, ephemeral=True)
-
-
-class InitElementsButton(Button):
-    """調整元素按鈕"""
-    def __init__(self, ctx):
-        super().__init__(label="✨ 元素", style=discord.ButtonStyle.secondary, row=1)
-        self.ctx = ctx
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
-        from initiative_utils import get_entry_names
-        from views import InitCharacterSelectView
-        
-        channel_id = self.ctx.channel.id
-        names = get_entry_names(channel_id)
-        
-        view = InitCharacterSelectView(self.ctx, names, "elements")
-        await interaction.followup.send("✨ 選擇要調整元素的角色：", view=view, ephemeral=True)
-
+        await interaction.response.send_message("❤️ 選擇要調整 HP 的角色：", view=view, ephemeral=True)
 
 class InitStatusButton(Button):
-    """狀態效果按鈕"""
+    """狀態管理按鈕"""
     def __init__(self, ctx):
-        super().__init__(label="🔵 狀態", style=discord.ButtonStyle.secondary, row=1)
+        super().__init__(label="✨ 狀態管理", style=discord.ButtonStyle.secondary, row=1)
         self.ctx = ctx
-
+    
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
         from initiative_utils import get_entry_names
         from views import InitStatusActionSelectView
         
@@ -603,109 +617,188 @@ class InitStatusButton(Button):
         names = get_entry_names(channel_id)
         
         view = InitStatusActionSelectView(self.ctx, names)
-        await interaction.followup.send("✨ 選擇狀態操作：", view=view, ephemeral=True)
+        await interaction.response.send_message("✨ 選擇狀態操作：", view=view, ephemeral=True)
 
-
-class InitResetButton(Button):
-    """重置回合按鈕"""
+class InitFavDiceEditButton(Button):
+    """編輯常用骰按鈕 (新增/修改/刪除)"""
     def __init__(self, ctx):
-        super().__init__(label="🔄 重置", style=discord.ButtonStyle.secondary, row=0)
+        super().__init__(label="🎲 編輯常用骰", style=discord.ButtonStyle.secondary, row=1)
         self.ctx = ctx
+    
+    async def callback(self, interaction: discord.Interaction):
+        from views import InitFavDiceActionSelectView
+        
+        view = InitFavDiceActionSelectView(self.ctx)
+        await interaction.response.send_message("🎲 選擇常用骰操作：", view=view, ephemeral=True)
 
+class InitFavDiceRollButton(Button):
+    """擲常用骰按鈕"""
+    def __init__(self, ctx):
+        super().__init__(label="🎲 擲常用骰", style=discord.ButtonStyle.primary, row=2)
+        self.ctx = ctx
+    
+    async def callback(self, interaction: discord.Interaction):
+        from initiative_utils import get_entry_names, get_selected_character, get_favorite_dice_names
+        from views import InitCharacterSelectView, InitFavDiceRollSelectView
+        
+        channel_id = self.ctx.channel.id
+        selected = get_selected_character(channel_id)
+        
+        if selected:
+            dice_names = get_favorite_dice_names(channel_id, selected)
+            if not dice_names:
+                await interaction.response.send_message(f"❌ **{selected}** 沒有常用骰！", ephemeral=True)
+                return
+            view = InitFavDiceRollSelectView(self.ctx, selected, dice_names)
+            await interaction.response.send_message(f"🎲 選擇 **{selected}** 的常用骰：", view=view, ephemeral=True)
+            return
+            
+        names = get_entry_names(channel_id)
+        view = InitCharacterSelectView(self.ctx, names, "fav_dice_roll")
+        await interaction.response.send_message("🎲 選擇要擲骰的角色：", view=view, ephemeral=True)
+
+class InitEditButton(Button):
+    """編輯先攻按鈕"""
+    def __init__(self, ctx):
+        super().__init__(label="✏️ 編輯先攻", style=discord.ButtonStyle.secondary, row=2)
+        self.ctx = ctx
+    
+    async def callback(self, interaction: discord.Interaction):
+        from initiative_utils import get_entry_names, get_selected_character
+        from views import InitCharacterSelectView, InitEditInitiativeModal
+        
+        channel_id = self.ctx.channel.id
+        selected = get_selected_character(channel_id)
+        
+        if selected:
+            modal = InitEditInitiativeModal(self.ctx, selected)
+            await interaction.response.send_modal(modal)
+            return
+            
+        names = get_entry_names(channel_id)
+        view = InitCharacterSelectView(self.ctx, names, "initiative")
+        await interaction.response.send_message("✏️ 選擇要編輯先攻的角色：", view=view, ephemeral=True)
+
+class RerollAllInitiativeButton(Button):
+    """全員重骰先攻按鈕"""
+    def __init__(self, ctx):
+        super().__init__(label="🔄 全員重骰先攻", style=discord.ButtonStyle.danger, row=4)
+        self.ctx = ctx
+    
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        
-        from initiative_utils import reset_tracker, get_tracker_display
+        from initiative_utils import reroll_all_initiative, get_tracker_display
         from views import InitiativeTrackerView
         
         channel_id = self.ctx.channel.id
-        reset_tracker(channel_id)
+        results = reroll_all_initiative(channel_id)
         
-        view = InitiativeTrackerView(self.ctx)
+        # 顯示結果摘要
+        summary = "🎲 **全員重骰結果**:\n"
+        for name, old, new, detail in results:
+            summary += f"**{name}**: {old} → **{new}** ({detail})\n"
+        
+        if len(summary) > 2000:
+            summary = summary[:1997] + "..."
+            
+        await interaction.followup.send(summary)
+        
+        # 刷新先攻表
         display = get_tracker_display(channel_id)
+        view = InitiativeTrackerView(self.ctx)
         
-        await interaction.followup.send("🔄 已重置回合數", ephemeral=True)
-        await interaction.message.edit(content=display, view=view)
+        # 嘗試更新原訊息
+        if hasattr(interaction.message, "edit"):
+            # 如果是從先攻表按鈕觸發（通常不會，因為這是在常用骰區），但如果是
+            # 我們需要找到先攻表的訊息。
+            # 這裡簡單發送新訊息或不做動作，因為 reroll_all_initiative 已經儲存了
+            # 但使用者需要看到更新後的表。
+            
+            # 從 shared_state 獲取先攻表訊息引用
+            import shared_state
+            msg_refs = shared_state.initiative_messages.get(str(channel_id), {})
+            tracker_msg = msg_refs.get("tracker_msg")
+            
+            if tracker_msg:
+                try:
+                    await tracker_msg.edit(content=display, view=view)
+                except:
+                    # 如果編輯失敗，發送新的
+                    tracker_msg = await self.ctx.send(display, view=view)
+                    shared_state.initiative_messages[str(channel_id)]["tracker_msg"] = tracker_msg
+            else:
+                tracker_msg = await self.ctx.send(display, view=view)
+                if str(channel_id) not in shared_state.initiative_messages:
+                    shared_state.initiative_messages[str(channel_id)] = {}
+                shared_state.initiative_messages[str(channel_id)]["tracker_msg"] = tracker_msg
 
+class QuickDiceButton(Button):
+    """快速擲骰按鈕 (常用骰快捷鍵)"""
+    def __init__(self, ctx, char_name, dice_name, formula):
+        label = f"{char_name}: {dice_name}"
+        if len(label) > 80:
+            label = label[:77] + "..."
+        super().__init__(label=label, style=discord.ButtonStyle.secondary)
+        self.ctx = ctx
+        self.char_name = char_name
+        self.dice_name = dice_name
+        self.formula = formula
+    
+    async def callback(self, interaction: discord.Interaction):
+        from dice_utils import parse_and_roll, DiceParseError, try_coc_roll
+        
+        # 嘗試 CoC 擲骰
+        coc_result = try_coc_roll(self.formula)
+        if coc_result:
+            if coc_result.startswith("❌"):
+                await interaction.response.send_message(coc_result, ephemeral=True)
+            else:
+                await interaction.response.send_message(
+                    f"🎲 **{self.char_name}** 擲 **{self.dice_name}**\n{coc_result}"
+                )
+            return
+        
+        try:
+            result, dice_rolls = parse_and_roll(self.formula)
+            
+            # 生成擲骰詳情
+            if dice_rolls:
+                rolls_str = ", ".join(
+                    f"[{', '.join(map(str, d.kept_rolls if d.kept_rolls else d.rolls))}]"
+                    for d in dice_rolls
+                )
+                roll_detail = f"{rolls_str} = {result}"
+            else:
+                roll_detail = str(result)
+            
+            await interaction.response.send_message(
+                f"🎲 **{self.char_name}** 擲 **{self.dice_name}** ({self.formula})\n"
+                f"結果: {roll_detail}"
+            )
+            
+        except DiceParseError as e:
+            await interaction.response.send_message(f"❌ 公式錯誤: {e}", ephemeral=True)
 
 class InitRemoveSelectButton(Button):
     """移除特定角色按鈕"""
-    def __init__(self, name: str, ctx):
+    def __init__(self, name, ctx):
         super().__init__(label=name, style=discord.ButtonStyle.danger)
         self.name = name
         self.ctx = ctx
-
+        
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        
-        from initiative_utils import remove_entry, get_tracker_display
-        from views import InitiativeTrackerView
+        from initiative_utils import remove_entry
+        from views import refresh_tracker_view
         
         channel_id = self.ctx.channel.id
         success = remove_entry(channel_id, self.name)
         
         if success:
             await interaction.followup.send(f"✅ 已移除 **{self.name}**", ephemeral=True)
+            await refresh_tracker_view(self.ctx)
             
-            view = InitiativeTrackerView(self.ctx)
-            display = get_tracker_display(channel_id)
-            await self.ctx.send(display, view=view)
+            # 刪除選擇訊息
+            await interaction.message.delete()
         else:
             await interaction.followup.send(f"❌ 找不到 **{self.name}**", ephemeral=True)
-
-
-class InitFavDiceAddButton(Button):
-    """新增常用骰按鈕"""
-    def __init__(self, ctx):
-        super().__init__(label="➕ 骰子", style=discord.ButtonStyle.secondary, row=1)
-        self.ctx = ctx
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
-        from initiative_utils import get_entry_names
-        from views import InitCharacterSelectView
-        
-        channel_id = self.ctx.channel.id
-        names = get_entry_names(channel_id)
-        
-        view = InitCharacterSelectView(self.ctx, names, "fav_dice_add")
-        await interaction.followup.send("➕ 選擇要新增常用骰的角色：", view=view, ephemeral=True)
-
-
-class InitFavDiceRollButton(Button):
-    """擲常用骰按鈕"""
-    def __init__(self, ctx):
-        super().__init__(label="🎲 骰子", style=discord.ButtonStyle.secondary, row=1)
-        self.ctx = ctx
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
-        from initiative_utils import get_entry_names
-        from views import InitCharacterSelectView
-        
-        channel_id = self.ctx.channel.id
-        names = get_entry_names(channel_id)
-        
-        view = InitCharacterSelectView(self.ctx, names, "fav_dice_roll")
-        await interaction.followup.send("🎲 選擇要擲常用骰的角色：", view=view, ephemeral=True)
-
-
-class InitEditButton(Button):
-    """編輯按鈕 (先攻值)"""
-    def __init__(self, ctx):
-        super().__init__(label="✏️ 編輯先攻", style=discord.ButtonStyle.secondary, row=2)
-        self.ctx = ctx
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
-        from initiative_utils import get_entry_names
-        from views import InitCharacterSelectView
-        
-        channel_id = self.ctx.channel.id
-        names = get_entry_names(channel_id)
-        
-        view = InitCharacterSelectView(self.ctx, names, "initiative")
-        await interaction.followup.send("✏️ 選擇要編輯先攻的角色：", view=view, ephemeral=True)

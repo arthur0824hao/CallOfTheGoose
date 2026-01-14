@@ -57,6 +57,114 @@
           "atk": 0,
           "def_": 0,
           "status_effects": {},
+          "favorite_dice": {
+            "體質": "cc 100"
+          }
+        },
+        {
+          "name": "諾拉",
+          "initiative": 28,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {
+            "攻擊": "1d50"
+          }
+        },
+        {
+          "name": "康卓",
+          "initiative": 26,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "左眼",
+          "initiative": 25,
+          "roll_detail": "[10] = 25",
+          "hp": 600,
+          "elements": 1200,
+          "atk": 3,
+          "def_": 5,
+          "status_effects": {},
+          "favorite_dice": {},
+          "last_formula": "1d20+15"
+        },
+        {
+          "name": "右眼",
+          "initiative": 25,
+          "roll_detail": "[10] = 25",
+          "hp": 600,
+          "elements": 1200,
+          "atk": 3,
+          "def_": 5,
+          "status_effects": {},
+          "favorite_dice": {},
+          "last_formula": "1d20+15"
+        },
+        {
+          "name": "高爾迪",
+          "initiative": 20,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {}
+        },
+        {
+          "name": "依克奎德",
+          "initiative": 1,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "獎勵/懲罰": 0,
+          "優勢/劣勢": 0,
+          "status_effects": {},
+          "favorite_dice": {},
+          "last_formula": null
+        },
+        {
+          "name": "GM",
+          "initiative": 0,
+          "roll_detail": null,
+          "hp": 0,
+          "elements": 0,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
+          "favorite_dice": {
+            "1d50": "1d50",
+            "1d100": "1d100"
+          }
+        }
+      ],
+      "current_round": 2,
+      "current_index": 7,
+      "is_active": true,
+      "selected_character": "凱洛爾"
+    },
+    "1342103368537210963": {
+      "entries": [
+        {
+          "name": "凱洛爾",
+          "initiative": 29,
+          "roll_detail": null,
+          "hp": 22,
+          "elements": 53,
+          "atk": 0,
+          "def_": 0,
+          "status_effects": {},
           "favorite_dice": {}
         },
         {
@@ -120,26 +228,9 @@
         }
       ],
       "current_round": 2,
-      "current_index": 6,
-      "is_active": true
-    },
-    "1342103368537210963": {
-      "entries": [
-        {
-          "name": "潘",
-          "initiative": 1,
-          "roll_detail": null,
-          "hp": 0,
-          "elements": 0,
-          "atk": 0,
-          "def_": 0,
-          "status_effects": {},
-          "favorite_dice": {}
-        }
-      ],
-      "current_round": 1,
-      "current_index": 0,
-      "is_active": true
+      "current_index": 1,
+      "is_active": true,
+      "selected_character": null
     },
     "1298201971974733864": {
       "entries": [

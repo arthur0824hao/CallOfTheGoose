@@ -194,3 +194,28 @@ All commands use the `!` prefix (e.g., `!play`, `!r`, `!skip`).
 2. 考慮使用更穩定的播放庫
 3. 將複雜功能設為選項，而非默認
 4. 重視可靠性勝於功能豐富度- 已安裝 Bun
+
+## Recent Updates (2026-01-15)
+
+### Major Refactoring
+- **Modular Structure**: Codebase reorganized into `utils/`, `ui/`, and `cogs/`.
+  - `utils/`: `dice.py`, `music.py`, `initiative.py`, `character_storage.py`, `shared_state.py`
+  - `ui/`: `views.py`, `buttons.py`
+- **Global Character Storage**: New `!char` command and persistent storage in `data/characters.json`.
+  - `!char list`: List saved characters.
+  - `!char show`: View details.
+  - `!char delete`: Delete character.
+
+### Initiative Tracker Enhancements
+- **Unified Edit Modal**: One modal to edit HP, Elements, ATK, DEF, and Initiative at once.
+- **Batch Status Edit**: Textarea-based status editing (add/remove/update multiple statuses in one go).
+- **Save/Load Character**:
+  - **Save**: Export current character stats/dice to global storage.
+  - **Load**: Import character from global storage (auto-rolls initiative).
+- **Target Locking**: Improved integration with new UI buttons.
+
+### Core Improvements
+- **Dice Parser**: Added support for unary operators (e.g., `-1d4`, `+5`).
+- **Stability**: Implemented `asyncio.Lock` for music and character storage operations.
+- **Error Handling**: Enhanced JSON loading safety (backups corrupted files).
+- **Music UI**: Refactored queue removal to use in-place message editing (no flickering).

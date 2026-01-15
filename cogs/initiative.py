@@ -1,13 +1,13 @@
 
 import discord
 from discord.ext import commands
-from permissions import check_authorization
-from views import InitiativeTrackerView, FavoriteDiceOverviewView
-from initiative_utils import (add_entry, add_entry_with_roll, remove_entry, get_entry,
+from utils.permissions import check_authorization
+from ui.views import InitiativeTrackerView, FavoriteDiceOverviewView
+from utils.initiative import (add_entry, add_entry_with_roll, remove_entry, get_entry,
                               next_turn, set_stats, modify_hp, modify_elements,
                               add_status, remove_status, reset_tracker, end_combat,
                               get_tracker_display, get_entry_names, get_favorite_dice_display)
-import shared_state
+import utils.shared_state as shared_state
 
 class Initiative(commands.Cog):
     def __init__(self, bot):
@@ -269,6 +269,61 @@ class Initiative(commands.Cog):
                     await ctx.send(f"❌ {result}")
             else:
                 await ctx.send("❌ 未知的子命令！使用 `!init` 查看先攻表")
+
+    @commands.group(name="char", invoke_without_command=True)
+    async def char_command(self, ctx):
+        if not check_authorization(ctx): return
+        await ctx.send("使用 `!char list` 列出角色，`!char show <名字>` 查看詳情，或使用先攻表按鈕進行保存/導入。")
+
+    @char_command.command(name="list")
+    async def char_list(self, ctx):
+        from utils.character_storage import get_all_names
+        names = await get_all_names()
+        if not names:
+            await ctx.send("📂 全域角色庫是空的。")
+            return
+        
+        msg = "📂 **全域角色列表**:\n" + ", ".join(f"`{n}`" for n in names)
+        await ctx.send(msg)
+
+    @char_command.command(name="delete")
+    async def char_delete(self, ctx, name: str):
+        from utils.character_storage import delete_character
+        success = await delete_character(name)
+        if success:
+            await ctx.send(f"🗑️ 已刪除全域角色 **{name}**")
+        else:
+            await ctx.send(f"❌ 找不到全域角色 **{name}**")
+
+    @char_command.command(name="show")
+    async def char_show(self, ctx, name: str):
+        from utils.character_storage import get_character
+        data = await get_character(name)
+        if not data:
+            await ctx.send(f"❌ 找不到全域角色 **{name}**")
+            return
+            
+        stats = data.get("stats", {})
+        dice = data.get("favorite_dice", {})
+        formula = data.get("initiative_formula")
+        
+        embed = discord.Embed(title=f"角色詳情: {name}", color=discord.Color.blue())
+        if formula:
+            embed.add_field(name="⚔️ 先攻公式", value=f"`{formula}`", inline=False)
+            
+        stats_desc = []
+        if stats.get("hp") is not None: stats_desc.append(f"HP: {stats['hp']}")
+        if stats.get("elements") is not None: stats_desc.append(f"元素: {stats['elements']}")
+        if stats.get("atk") is not None: stats_desc.append(f"ATK: {stats['atk']}")
+        if stats.get("def_") is not None: stats_desc.append(f"DEF: {stats['def_']}")
+        if stats_desc:
+            embed.add_field(name="📊 基礎數值", value=" | ".join(stats_desc), inline=False)
+            
+        if dice:
+            dice_desc = "\n".join(f"• **{k}**: `{v}`" for k, v in dice.items())
+            embed.add_field(name="🎲 常用骰", value=dice_desc, inline=False)
+            
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Initiative(bot))

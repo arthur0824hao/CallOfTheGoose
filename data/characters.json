@@ -1,0 +1,31 @@
+{
+  "凱洛爾": {
+    "stats": {
+      "hp": 22,
+      "elements": 3,
+      "atk": 1,
+      "def_": 0
+    },
+    "favorite_dice": {
+      "體質": "cc 100",
+      "閃避": "1d50-1d4",
+      "空手": "1D50+10",
+      "體能": "2D50KH+13",
+      "反擊": "1D50",
+      "格檔": "1D50-1D4"
+    },
+    "initiative_formula": null
+  },
+  "Someone": {
+    "stats": {
+      "hp": 29,
+      "elements": 0,
+      "atk": 5,
+      "def_": 4
+    },
+    "favorite_dice": {
+      "普攻": "1d10+10+1d12"
+    },
+    "initiative_formula": "1d20+30"
+  }
+}

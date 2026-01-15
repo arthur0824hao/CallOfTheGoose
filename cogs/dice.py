@@ -1,10 +1,10 @@
 
 import discord
 from discord.ext import commands
-from permissions import check_authorization
-from dice_utils import (parse_and_roll, format_dice_result, format_multiple_results,
+from utils.permissions import check_authorization
+from utils.dice import (parse_and_roll, format_dice_result, format_multiple_results,
                         DiceParseError, roll_coc_dice, format_coc_result)
-from music_utils import log_message
+from utils.music import log_message
 
 class Dice(commands.Cog):
     def __init__(self, bot):

@@ -4,4 +4,5 @@
 */song/
 *.vscode
 GooseOnCall-preview.code-workspace
-*.opus
+*.opus__pycache__/
+logs/

@@ -1,7 +1,7 @@
 
 import discord
 from discord.ext import commands
-from permissions import check_authorization
+from utils.permissions import check_authorization
 
 class General(commands.Cog):
     def __init__(self, bot):

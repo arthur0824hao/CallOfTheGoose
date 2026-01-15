@@ -1,11 +1,18 @@
 # AGENT.md
 
+## users word for you (do not touch or remove)
+
+
+### General
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Development Commands
 
-所有功能都要用測試
+所有功能都要用TDD
 新功能開發用git branch  沒問題才並回主分支
+
+
 
 ### Setup
 ```bash

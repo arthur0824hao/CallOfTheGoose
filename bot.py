@@ -4,9 +4,9 @@ from discord.ext import commands
 import asyncio
 import os
 from dotenv import load_dotenv
-from music_utils import log_message, scan_and_update_musicsheet, init_musicsheet_system
-from initiative_utils import load_tracker
-import shared_state
+from utils.music import log_message, scan_and_update_musicsheet, init_musicsheet_system
+from utils.initiative import load_tracker
+import utils.shared_state as shared_state
 
 # 加載環境變數
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

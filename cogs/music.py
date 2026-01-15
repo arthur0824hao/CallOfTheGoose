@@ -1,19 +1,19 @@
 
 import discord
 from discord.ext import commands
-from permissions import check_authorization
+from utils.permissions import check_authorization
 import os
 import yt_dlp
 import asyncio
 import math
-from music_utils import (load_musicsheet, save_musicsheet, download_song,
+from utils.music import (load_musicsheet, save_musicsheet, download_song,
                         find_downloaded_file, get_next_index, log_message, 
                         debug_log, remove_song, convert_to_pcm, play_next,
                         PCMStreamReader, sanitize_filename,
                         list_musicsheets, create_musicsheet, delete_musicsheet,
                         switch_musicsheet, get_sheet_display_name, rename_musicsheet)
-from views import QueuePaginationView, PlaySelectionView, NowPlayingView, SearchView
-import shared_state
+from ui.views import QueuePaginationView, PlaySelectionView, NowPlayingView, SearchView
+import utils.shared_state as shared_state
 
 # 全局常量
 MAX_SONGS = 50
@@ -331,13 +331,7 @@ class Music(commands.Cog):
             await ctx.send("📋 檢測到播放清單 URL，正在處理播放清單...")
             return await self.addplaylist_command(ctx, playlist_url=url)
         
-        musicsheet_data = load_musicsheet()
-
-        if len(musicsheet_data["songs"]) >= MAX_SONGS:
-            await ctx.send("❌ 播放清單已滿 (最多 50 首)！")
-            return
-
-        import shared_state
+        import utils.shared_state as shared_state
         
         ydl_opts = {
             'quiet': True, 
@@ -356,19 +350,26 @@ class Music(commands.Cog):
             await ctx.send(f"❌ 無法取得歌曲資訊：{e}")
             return
 
-        new_song = {
-            "title": song_title,
-            "is_downloaded": False,
-            "url": url,
-            "musicsheet": "default",
-            "index": get_next_index(musicsheet_data),
-            "is_playing": False,
-            "is_previous": False,
-            "sanitized_title": sanitize_filename(song_title)
-        }
+        async with shared_state.music_lock:
+            musicsheet_data = load_musicsheet()
 
-        musicsheet_data["songs"].append(new_song)
-        save_musicsheet(musicsheet_data)
+            if len(musicsheet_data["songs"]) >= MAX_SONGS:
+                await ctx.send("❌ 播放清單已滿 (最多 50 首)！")
+                return
+
+            new_song = {
+                "title": song_title,
+                "is_downloaded": False,
+                "url": url,
+                "musicsheet": "default",
+                "index": get_next_index(musicsheet_data),
+                "is_playing": False,
+                "is_previous": False,
+                "sanitized_title": sanitize_filename(song_title)
+            }
+
+            musicsheet_data["songs"].append(new_song)
+            save_musicsheet(musicsheet_data)
 
         await ctx.send(f"✅ 已加入播放清單：{song_title} (索引：{new_song['index']})")
 
@@ -387,7 +388,7 @@ class Music(commands.Cog):
         available_slots = MAX_SONGS - current_songs_count
         await ctx.send(f"🔄 正在處理播放清單，還可添加 {available_slots} 首歌曲...")
 
-        import shared_state
+        import utils.shared_state as shared_state
         
         ydl_opts = {
             'quiet': True, 
@@ -459,7 +460,7 @@ class Music(commands.Cog):
                 display = sheet.get("display_name", name)
                 marker = "▶ " if name == current else "   "
                 
-                from music_utils import get_musicsheet_path
+                from utils.music import get_musicsheet_path
                 path = get_musicsheet_path(name)
                 try:
                     with open(path, "r", encoding="utf-8") as f:

@@ -118,10 +118,26 @@
       "current_round": 9,
       "current_index": 5,
       "is_active": true,
-      "selected_character": "凱洛爾"
+      "selected_character": "Someone"
     },
     "1342103368537210963": {
       "entries": [
+        {
+          "name": "Someone",
+          "initiative": 39,
+          "roll_detail": "[9] = 39",
+          "hp": 29,
+          "elements": 0,
+          "atk": 5,
+          "def_": 4,
+          "獎勵/懲罰": 0,
+          "優勢/劣勢": 0,
+          "status_effects": {},
+          "favorite_dice": {
+            "普攻": "1d10+10+1d12"
+          },
+          "last_formula": "1d20+30"
+        },
         {
           "name": "凱洛爾",
           "initiative": 29,
@@ -130,7 +146,11 @@
           "elements": 53,
           "atk": 0,
           "def_": 0,
-          "status_effects": {},
+          "status_effects": {
+            "中毒": "3",
+            "燃燒": "1",
+            "虛弱": "2"
+          },
           "favorite_dice": {
             "體能": ".40 2d50kh+100"
           }
@@ -196,9 +216,9 @@
         }
       ],
       "current_round": 2,
-      "current_index": 1,
+      "current_index": 2,
       "is_active": true,
-      "selected_character": "凱洛爾"
+      "selected_character": "Someone"
     },
     "1298201971974733864": {
       "entries": [

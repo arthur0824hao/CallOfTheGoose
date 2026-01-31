@@ -6,7 +6,8 @@ from ui.views import InitiativeTrackerView, FavoriteDiceOverviewView
 from utils.initiative import (add_entry, add_entry_with_roll, remove_entry, get_entry,
                               next_turn, set_stats, modify_hp, modify_elements,
                               add_status, remove_status, reset_tracker, end_combat,
-                              get_tracker_display, get_entry_names, get_favorite_dice_display)
+                              add_status, remove_status, reset_tracker, end_combat,
+                              get_tracker_display, get_entry_names, get_favorite_dice_display, get_tracker, get_selected_character)
 import utils.shared_state as shared_state
 
 class Initiative(commands.Cog):
@@ -22,8 +23,13 @@ class Initiative(commands.Cog):
             force_new: 強制發送新訊息 (預設 False，嘗試編輯舊訊息)
         """
         channel_id = str(ctx.channel.id)
-        display = get_tracker_display(channel_id)
-        view = InitiativeTrackerView(ctx)
+        display = await get_tracker_display(channel_id)
+        
+        # 預先獲取 Async 資料
+        target_name = await get_selected_character(channel_id)
+        entry_names = await get_entry_names(channel_id)
+
+        view = InitiativeTrackerView(ctx, target_name, entry_names)
         
         # 取得現有訊息參考
         msg_refs = shared_state.initiative_messages.get(channel_id, {})
@@ -55,9 +61,9 @@ class Initiative(commands.Cog):
             tracker_msg = await ctx.send(display, view=view)
         
         # 顯示常用骰區
-        dice_display = get_favorite_dice_display(channel_id)
+        dice_display = await get_favorite_dice_display(channel_id)
         if dice_display:
-            dice_view = FavoriteDiceOverviewView(ctx)
+            dice_view = FavoriteDiceOverviewView(ctx, target_name)
             if dice_msg:
                 try:
                     await dice_msg.edit(content=dice_display, view=dice_view)
@@ -108,7 +114,7 @@ class Initiative(commands.Cog):
                 await ctx.send("❌ 先攻值必須是數字！")
                 return
             
-            success = add_entry(ctx.channel.id, name, initiative)
+            success = await add_entry(ctx.channel.id, name, initiative)
             if success:
                 await ctx.send(f"✅ 已新增 **{name}** (先攻: {initiative})")
                 await self.display_init_ui(ctx)
@@ -118,9 +124,9 @@ class Initiative(commands.Cog):
         elif subcommand == "next":
             # !init next
             channel_id = ctx.channel.id
-            name, new_round = next_turn(channel_id)
+            name, new_round = await next_turn(channel_id)
             if name:
-                tracker = shared_state.get_tracker(channel_id)
+                tracker = await get_tracker(channel_id)
                 if new_round:
                     await ctx.send(f"🔄 **第 {tracker['current_round']} 回合開始！** 輪到 **{name}** 行動")
                 else:
@@ -136,7 +142,7 @@ class Initiative(commands.Cog):
                 return
             
             name = parts[1]
-            success = remove_entry(ctx.channel.id, name)
+            success = await remove_entry(ctx.channel.id, name)
             if success:
                 await ctx.send(f"✅ 已移除 **{name}**")
                 await self.display_init_ui(ctx)
@@ -159,7 +165,7 @@ class Initiative(commands.Cog):
                 await ctx.send("❌ 數值必須是數字！")
                 return
             
-            success = set_stats(ctx.channel.id, name, hp=hp, elements=elements, atk=atk, def_=def_)
+            success = await set_stats(ctx.channel.id, name, hp=hp, elements=elements, atk=atk, def_=def_)
             if success:
                 stats_parts = []
                 if hp is not None: stats_parts.append(f"HP: {hp}")
@@ -184,7 +190,7 @@ class Initiative(commands.Cog):
                 await ctx.send("❌ 數值必須是數字！")
                 return
             
-            success, result = modify_hp(ctx.channel.id, name, delta)
+            success, result = await modify_hp(ctx.channel.id, name, delta)
             if success:
                 await ctx.send(f"{'💚' if delta > 0 else '💔'} **{name}** HP {'+' if delta >= 0 else ''}{delta} → **{result}**")
             else:
@@ -203,7 +209,7 @@ class Initiative(commands.Cog):
                 await ctx.send("❌ 數值必須是數字！")
                 return
             
-            success, result = modify_elements(ctx.channel.id, name, delta)
+            success, result = await modify_elements(ctx.channel.id, name, delta)
             if success:
                 await ctx.send(f"✨ **{name}** 元素 {'+' if delta >= 0 else ''}{delta} → **{result}**")
             else:
@@ -217,7 +223,7 @@ class Initiative(commands.Cog):
             
             name = parts[1]
             status = parts[2]
-            success = add_status(ctx.channel.id, name, status, "")
+            success = await add_status(ctx.channel.id, name, status, "")
             if success:
                 await ctx.send(f"✨ **{name}** 獲得狀態 **{status}**")
             else:
@@ -231,7 +237,7 @@ class Initiative(commands.Cog):
             
             name = parts[1]
             status = parts[2]
-            success = remove_status(ctx.channel.id, name, status)
+            success = await remove_status(ctx.channel.id, name, status)
             if success:
                 await ctx.send(f"⚪ **{name}** 移除狀態 **{status}**")
             else:
@@ -239,7 +245,7 @@ class Initiative(commands.Cog):
         
         elif subcommand == "end":
             # !init end
-            summary = end_combat(ctx.channel.id)
+            summary = await end_combat(ctx.channel.id)
             msg = f"🏁 **戰鬥結束！**\n"
             msg += f"━━━━━━━━━━━━━━━━━━\n"
             msg += f"📊 總回合數: {summary['total_rounds']}\n"
@@ -250,7 +256,7 @@ class Initiative(commands.Cog):
         
         elif subcommand == "reset":
             # !init reset
-            reset_tracker(ctx.channel.id)
+            await reset_tracker(ctx.channel.id)
             await ctx.send("🔄 已重置回合數")
             await self.display_init_ui(ctx)
         
@@ -261,7 +267,7 @@ class Initiative(commands.Cog):
                 formula = parts[0]
                 name = parts[1]
                 
-                success, result, roll_detail = add_entry_with_roll(ctx.channel.id, formula, name)
+                success, result, roll_detail = await add_entry_with_roll(ctx.channel.id, formula, name)
                 if success:
                     await ctx.send(f"🎲 擲骰: {formula} → {roll_detail}\n✅ 已新增 **{name}** (先攻: {result})")
                     await self.display_init_ui(ctx)

@@ -7,16 +7,38 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
+### environment
+conda activate discord_bot
+
+
+
+
+### Development Commands
 
 所有功能都要用TDD
 新功能開發用git branch  沒問題才並回主分支
 
 
 
-### Setup
+## Setup
+
+### Environment (Conda + uv)
 ```bash
-pip install -r requirements.txt
+conda create -n goose_bot python=3.11
+conda activate goose_bot
+pip install uv
+uv pip install -r requirements.txt
+```
+
+### Database (PostgreSQL)
+1. Install PostgreSQL 17+
+2. Run auto-setup script:
+```bash
+python utils/setup_postgres.py
+```
+3. Run migration (if moving from JSON):
+```bash
+python utils/migrate_json_to_db.py
 ```
 
 ### Run the Bot
@@ -33,6 +55,11 @@ python bot.py
 ### Update Tools
 - **OpenCode**: Run `opencode upgrade`
 - **Oh My OpenCode**: Run `ohmyopencode update` (or check installation docs)
+
+### n8n Integration (Optional)
+- **Local Dashboard**: `npx n8n` (Access at http://localhost:5678)
+- **API Key**: Configured in `N8N_API_KEY` (User Environment Variable)
+- **Note**: n8n may start silently (no console output). Check http://localhost:5678 if it appears stuck.
 
 ## Architecture Overview
 

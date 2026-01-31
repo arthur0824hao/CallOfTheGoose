@@ -535,8 +535,9 @@ async def get_tracker_display(channel_id):
     lines.append("━" * 30)
 
     for i, entry in enumerate(tracker["entries"]):
-        prefix = "▶ " if i == tracker["current_index"] else "   "
-        line = f"{prefix}{i + 1}. **{entry['name']}** [先攻: {entry['initiative']}]"
+        is_current = i == tracker["current_index"]
+        prefix = "▶ " if is_current else ""
+        line1 = f"{prefix}{i + 1}. **{entry['name']}** [先攻: {entry['initiative']}]"
 
         stats_parts = []
         if entry["hp"] is not None:
@@ -549,7 +550,9 @@ async def get_tracker_display(channel_id):
             stats_parts.append(f"DEF: {entry['def_']}")
 
         if stats_parts:
-            line += " | " + " | ".join(stats_parts)
+            line1 += " | " + " | ".join(stats_parts)
+
+        lines.append(line1)
 
         status = entry.get("status_effects", {})
         if status:
@@ -557,9 +560,7 @@ async def get_tracker_display(channel_id):
                 status_str = " ".join(f"✦{k}:{v}" for k, v in status.items())
             else:
                 status_str = " ".join(f"✦{s}" for s in status)
-            line += f" | {status_str}"
-
-        lines.append(line)
+            lines.append(f"   {status_str}")
 
     lines.append("━" * 30)
     return "\n".join(lines)

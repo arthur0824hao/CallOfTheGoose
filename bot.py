@@ -5,18 +5,20 @@ import asyncio
 import os
 from dotenv import load_dotenv
 from utils.music import log_message, scan_and_update_musicsheet, init_musicsheet_system
-from utils.initiative import load_tracker
+from utils.db import init_db
 import utils.shared_state as shared_state
 
 # 加載環境變數
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ENV_PATH = os.path.join(BASE_DIR, ".env")
+ENV_PATH = os.path.join(BASE_DIR, "data", ".env")
 load_dotenv(ENV_PATH)
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if not TOKEN:
     print("❌ 錯誤: 未找到 DISCORD_BOT_TOKEN 環境變數")
     TOKEN = ""
+else:
+    TOKEN = TOKEN.strip()
 
 LOG_DIR = "logs"
 SONG_DIR = "song/"
@@ -56,7 +58,7 @@ class GooseBot(commands.Bot):
         
         init_musicsheet_system()
         scan_and_update_musicsheet()
-        load_tracker()
+        await init_db()
 
     async def on_error(self, event, *args, **kwargs):
         import traceback
@@ -72,5 +74,7 @@ async def sync(interaction: discord.Interaction):
     await interaction.response.send_message("✅ 指令已同步！", ephemeral=True)
 
 if __name__ == "__main__":
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     if TOKEN:
         bot.run(TOKEN)
